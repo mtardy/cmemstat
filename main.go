@@ -64,7 +64,7 @@ func main() {
 	var debug bool
 	flag.BoolVar(&debug, "debug", false, "enable debug logs")
 	var systemdCgroup bool
-	flag.BoolVar(&systemdCgroup, "systemd-cgroup", true, "use Systemd cgroup driver to create rootless cgroups, see https://isogo.to/systemd-cgroup-driver")
+	flag.BoolVar(&systemdCgroup, "systemd-cgroup", cgroups.IsCgroup2UnifiedMode(), "use Systemd cgroup driver to create rootless cgroups (default true on v2, false on v1), see https://isogo.to/systemd-cgroup-driver")
 	var cmdOut, cmdErr string
 	flag.StringVar(&cmdOut, "cmdout", os.Stderr.Name(), "standard ouput file of the child command")
 	flag.StringVar(&cmdErr, "cmderr", os.Stderr.Name(), "standard error file of the child command")
@@ -133,9 +133,10 @@ func main() {
 
 	// create the cgroup and place the child inside it
 	cm, err := manager.New(&configs.Cgroup{
-		Name:     cgroupName,
-		Systemd:  systemdCgroup,
-		Rootless: systemdCgroup,
+		Name:      cgroupName,
+		Systemd:   systemdCgroup,
+		Rootless:  systemdCgroup,
+		Resources: &configs.Resources{},
 	})
 	if err != nil {
 		parentLogger.Error("failed to create the cgroup manager", "error", err)
